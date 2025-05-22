@@ -71,45 +71,20 @@ for rec in srecords:
     for comp in ("ns", "ew", "vt"):
         ts = getattr(rec, comp)   # timeseries.py의 TimeSeries 인스턴스
         end_time = ts.time()[-1]  # 시계열의 마지막 시간(초)
-        start_time = end_time - 1000  # 시계열의 마지막 시간에서 몇 초 더 뒤로
+        start_time = end_time - 300  # 시계열의 마지막 시간에서 몇 초 더 뒤로
         ts.trim(start_time, end_time)
 
 srecords_preprocessed = hvsrpy.preprocess(srecords, preprocessing_settings) #Preprocessing을 거친 데이터 생성
-hvsr = hvsrpy.process(srecords_preprocessed, processing_settings) #Processing을 거친 데이터 생성
-
-
-# Cox et al. (2020) | Frequency-Domain Window Rejection Algorithm
-# n = 2
-# search_range_in_hz = (None, None)
-# _ = hvsrpy.frequency_domain_window_rejection(hvsr, n=n, search_range_in_hz=search_range_in_hz)
-
-# STA-LTA | Short term average - Long term average rejection algorithm
-# srecords = hvsrpy.read(fnames) #srecords는 trim 파트에서 이미 선언 되어있기 때문에 상관 X
-# srecords_preprocessed = hvsrpy.preprocess(srecords, preprocessing_settings) # 윗 줄과 마찬가지임
+hvsr=hvsrpy.process(srecords_preprocessed,processing_settings)
 
 passing_records = hvsrpy.sta_lta_window_rejection(
     srecords_preprocessed,
     hvsr=hvsr,
     sta_seconds=1,
     lta_seconds=30,
-    min_sta_lta_ratio=0.2,
-    max_sta_lta_ratio=2.0
+    min_sta_lta_ratio=0.1,
+    max_sta_lta_ratio=2.5
 )
-#hvsr=hvsrpy.process(passing_records, processing_settings)
-
-
-# Max Value | Maximum value window rejection
-#srecords = hvsrpy.read(fnames)
-#srecords_preprocessed = hvsrpy.preprocess(srecords, preprocessing_settings)
-#passing_records = hvsrpy.maximum_value_window_rejection(
-#    srecords_preprocessed,
-#    hvsr=hvsr,
-#    maximum_value_threshold=0.9,  # 필요에 따라 임계치 조정
-#    normalized=True                # 상대값 여부
-#)
-# Manual | Manual value window rejection
-# %matplotlib qt5
-# hvsr = hvsrpy.manual_window_rejection(hvsr)
 
 mfig, axs = hvsrpy.plot_pre_and_post_rejection(srecords_preprocessed, hvsr)
 plt.show()

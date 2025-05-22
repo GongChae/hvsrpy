@@ -51,7 +51,7 @@ print("-"*60)
 preprocessing_settings.psummary()
 
 processing_settings = hvsrpy.settings.HvsrTraditionalProcessingSettings()
-processing_settings.window_type_and_width = ("tukey", 0.1)
+processing_settings.window_type_and_width = ("tukey", 0.05)
 processing_settings.smoothing=dict(operator="konno_and_ohmachi",
                                    bandwidth=40,
                                    center_frequencies_in_hz=np.geomspace(0.5, 20, 200))
@@ -64,21 +64,22 @@ processing_settings.psummary()
 
 srecords = hvsrpy.read(fnames) # 입력한 데이터를 hvsrpy 패키지 안에서 처리할 수 있는 형식으로 만듦
 
-for rec in srecords:
-    for comp in ("ns", "ew", "vt"):
-        ts = getattr(rec, comp)   # timeseries.py의 TimeSeries 인스턴스
-        end_time = ts.time()[-1]  # 시계열의 마지막 시간(초)
-        start_time = end_time - 1000  # 시계열의 마지막 시간에서 몇 초 더 뒤로
-        ts.trim(start_time, end_time)
+#for rec in srecords:
+#    for comp in ("ns", "ew", "vt"):
+#        ts = getattr(rec, comp)   # timeseries.py의 TimeSeries 인스턴스
+#        end_time = ts.time()[-1]  # 시계열의 마지막 시간(초)
+#        start_time = end_time - 1000  # 시계열의 마지막 시간에서 몇 초 더 뒤로
+#        ts.trim(start_time, end_time)
 
-srecords_preprocessed = hvsrpy.preprocess(srecords, preprocessing_settings) #Preprocessing을 거친 데이터 생성
-passing = hvsrpy.sta_lta_window_rejection(srecords_preprocessed,
+
+passing = hvsrpy.sta_lta_window_rejection(srecords,
     sta_seconds=1,
     lta_seconds=30,
-    min_sta_lta_ratio=0.1,
+    min_sta_lta_ratio=0.2,
     max_sta_lta_ratio=2.5,
     hvsr=None
 ) #디폴트 값 사용 예정
+srecords_preprocessed = hvsrpy.preprocess(passing, preprocessing_settings) #Preprocessing을 거친 데이터 생성
 hvsr=hvsrpy.process(passing,processing_settings)
 
 mfig, axs = hvsrpy.plot_single_panel_hvsr_curves(hvsr) #싱글 커브 결과 그래프
