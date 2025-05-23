@@ -51,7 +51,7 @@ processing_settings.window_type_and_width = ("tukey", 0.1)
 processing_settings.smoothing = dict(
     operator="konno_and_ohmachi",
     bandwidth=40,
-    center_frequencies_in_hz=np.geomspace(0.5, 20, 200)
+    center_frequencies_in_hz=np.geomspace(0.1, 20, 200)
 )
 processing_settings.method_to_combine_horizontals = "total_horizontal_energy"
 processing_settings.handle_dissimilar_time_steps_by = "frequency_domain_resampling"
@@ -64,7 +64,7 @@ for base_id, fnames in fname_sets:
         srecords = hvsrpy.read([fnames])
         ts_sample = getattr(srecords[0], "vt")
         end_time = ts_sample.time()[-1]
-        intervals = list(range(3600, 299, -300))
+        intervals = list(range(3600, 299, -60))
 
         results = []
 
@@ -84,7 +84,7 @@ for base_id, fnames in fname_sets:
                     srecords_pre,
                     sta_seconds=1,
                     lta_seconds=30,
-                    min_sta_lta_ratio=0.2,
+                    min_sta_lta_ratio=0.1,
                     max_sta_lta_ratio=2.5,
                     hvsr=None
                 )

@@ -23,7 +23,7 @@ def find_enz_files(folder_path):
         return None
 
 # Input folder path
-input_folder = 'C:\\SOLODATA\\try'
+input_folder = 'C:\\SOLODATA\\test_try'
 
 fnames = []
 enz_files = find_enz_files(input_folder)
@@ -83,7 +83,7 @@ passing_records = hvsrpy.sta_lta_window_rejection(
     sta_seconds=1,
     lta_seconds=30,
     min_sta_lta_ratio=0.1,
-    max_sta_lta_ratio=2.5
+    max_sta_lta_ratio=2.0
 )
 
 mfig, axs = hvsrpy.plot_pre_and_post_rejection(srecords_preprocessed, hvsr)
