@@ -64,7 +64,7 @@ for base_id, fnames in fname_sets:
         srecords = hvsrpy.read([fnames])
         ts_sample = getattr(srecords[0], "vt")
         end_time = ts_sample.time()[-1]
-        intervals = list(range(3600, 299, -60))
+        intervals = list(range(3600, 299, -300))
 
         results = []
 

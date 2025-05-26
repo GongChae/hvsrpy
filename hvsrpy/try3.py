@@ -71,22 +71,23 @@ for rec in srecords:
     for comp in ("ns", "ew", "vt"):
         ts = getattr(rec, comp)   # timeseries.py의 TimeSeries 인스턴스
         end_time = ts.time()[-1]  # 시계열의 마지막 시간(초)
-        start_time = end_time - 300  # 시계열의 마지막 시간에서 몇 초 더 뒤로
+        start_time = end_time - 3600  # 시계열의 마지막 시간에서 몇 초 더 뒤로
         ts.trim(start_time, end_time)
 
 srecords_preprocessed = hvsrpy.preprocess(srecords, preprocessing_settings) #Preprocessing을 거친 데이터 생성
-hvsr=hvsrpy.process(srecords_preprocessed,processing_settings)
+
 
 passing_records = hvsrpy.sta_lta_window_rejection(
     srecords_preprocessed,
-    hvsr=hvsr,
+    hvsr=None,
     sta_seconds=1,
     lta_seconds=30,
     min_sta_lta_ratio=0.1,
-    max_sta_lta_ratio=2.0
+    max_sta_lta_ratio=2.5
 )
+hvsr=hvsrpy.process(passing_records,processing_settings)
 
-mfig, axs = hvsrpy.plot_pre_and_post_rejection(srecords_preprocessed, hvsr)
+mfig, axs = hvsrpy.plot_pre_and_post_rejection(passing_records, hvsr)
 plt.show()
 
 save_figure = False
@@ -154,3 +155,11 @@ if hvsr and hasattr(hvsr, 'mean_curve'):
     print(f"  - 주파수 = {peak_frequency:.3f} Hz, 진폭 = {peak_amplitude:.3f}")
 else:
     print("\nHVSR 결과에서 고유 주파수를 찾을 수 없습니다.")
+
+    print("\nStatistical Summary:")
+    print("-" * 20)
+    hvsrpy.summarize_hvsr_statistics(hvsr)
+    (sfig, ax) = hvsrpy.plot_single_panel_hvsr_curves(hvsr)
+    ax.get_legend().remove()
+    ax.legend(loc="center left", bbox_to_anchor=(1, 0.5))
+    plt.show()
