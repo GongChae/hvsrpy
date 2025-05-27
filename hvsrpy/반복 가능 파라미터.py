@@ -11,8 +11,8 @@ import pandas as pd
 plt.style.use(hvsrpy.HVSRPY_MPL_STYLE)
 
 # === 입력 및 출력 경로 설정 ===
-data_dir = Path("C:/SOLODATA/zonghap/3month/36dB")
-save_root = Path("C:/SOLODATA/parameter")
+data_dir = Path("C:/Users/USER/Desktop/그룹2")
+save_root = Path("C:/SOLODATA/parameter_frequency_domain")
 output_dir = save_root / data_dir.name
 output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -38,6 +38,7 @@ if not fname_sets:
     exit()
 
 # === 파라미터 설정 ===
+#window_lengths = range(5, 61, 5)
 window_lengths = range(5, 61, 5)
 taper_ratios = np.round(np.arange(0.0, 1.01, 0.1), 2)
 bandwidths = range(10, 61, 10)
@@ -57,7 +58,7 @@ for base_id, fnames in fname_sets:
         ts_sample = getattr(srecords[0], "vt")
         end_time = ts_sample.time()[-1]
 
-        # 전체 구간 중 마지막 1200초만 사용
+        # 전체 구간 중 마지막 1500초만 사용
         for rec in srecords:
             for comp in ("ns", "ew", "vt"):
                 ts = getattr(rec, comp)
@@ -74,7 +75,7 @@ for base_id, fnames in fname_sets:
                             preprocessing_settings.detrend = "linear"
                             preprocessing_settings.window_length_in_seconds = win_len
                             preprocessing_settings.orient_to_degrees_from_north = 0.0
-                            preprocessing_settings.filter_corner_frequencies_in_hz = (1, 20)
+                            preprocessing_settings.filter_corner_frequencies_in_hz = (0.1, 20)
                             preprocessing_settings.ignore_dissimilar_time_step_warning = False
 
                             # ── 처리 설정 ──
@@ -83,7 +84,7 @@ for base_id, fnames in fname_sets:
                             processing_settings.smoothing = dict(
                                 operator="konno_and_ohmachi",
                                 bandwidth=bw,
-                                center_frequencies_in_hz=np.geomspace(1, 20, 200)
+                                center_frequencies_in_hz=np.geomspace(0.1, 20, 200)
                             )
                             processing_settings.method_to_combine_horizontals = method
                             processing_settings.handle_dissimilar_time_steps_by = "frequency_domain_resampling"
@@ -91,17 +92,10 @@ for base_id, fnames in fname_sets:
                             # ── 전처리 및 STA-LTA 제거 ──
                             s_copy = deepcopy(srecords)
                             s_pre = hvsrpy.preprocess(s_copy, preprocessing_settings)
-                            passing = hvsrpy.sta_lta_window_rejection(
-                                s_pre,
-                                sta_seconds=win_len / 30,
-                                lta_seconds=win_len,
-                                min_sta_lta_ratio=0.2,
-                                max_sta_lta_ratio=2.5,
-                                hvsr=None
-                            )
-
-                            # ── HVSR 처리 ──
-                            hvsr = hvsrpy.process(passing, processing_settings)
+                            hvsr = hvsrpy.process(s_pre, processing_settings)
+                            n=2
+                            search_range_in_hz = (0.1, 20)
+                            _ = hvsrpy.frequency_domain_window_rejection(hvsr, n=n, search_range_in_hz=search_range_in_hz)
 
                             # ── 고유주파수 추출 ──
                             if hvsr and hasattr(hvsr, 'mean_curve'):
