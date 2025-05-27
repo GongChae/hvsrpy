@@ -74,7 +74,7 @@ for base_id, fnames in fname_sets:
                             preprocessing_settings.detrend = "linear"
                             preprocessing_settings.window_length_in_seconds = win_len
                             preprocessing_settings.orient_to_degrees_from_north = 0.0
-                            preprocessing_settings.filter_corner_frequencies_in_hz = (0.1, 20)
+                            preprocessing_settings.filter_corner_frequencies_in_hz = (1, 20)
                             preprocessing_settings.ignore_dissimilar_time_step_warning = False
 
                             # ── 처리 설정 ──
@@ -83,7 +83,7 @@ for base_id, fnames in fname_sets:
                             processing_settings.smoothing = dict(
                                 operator="konno_and_ohmachi",
                                 bandwidth=bw,
-                                center_frequencies_in_hz=np.geomspace(0.1, 20, 200)
+                                center_frequencies_in_hz=np.geomspace(1, 20, 200)
                             )
                             processing_settings.method_to_combine_horizontals = method
                             processing_settings.handle_dissimilar_time_steps_by = "frequency_domain_resampling"
