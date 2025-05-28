@@ -2,8 +2,8 @@ import pandas as pd
 from pathlib import Path
 
 # === 경로 설정 ===
-input_folder = Path("C:/SOLODATA/parameter/36dB")  # XLSX 파일들이 있는 폴더
-output_file = Path("C:/SOLODATA/chlwhd.xlsx")  # 저장할 파일 경로
+input_folder = Path("C:/Users/USER/Desktop/전체/모으기")  # XLSX 파일들이 있는 폴더
+output_file = Path("C:/Users/USER/Desktop/전체/merged.xlsx")  # 저장할 파일 경로
 
 # === 폴더 안의 모든 .xlsx 파일 찾기 ===
 xlsx_files = sorted(input_folder.glob("*.xlsx"))

@@ -12,7 +12,7 @@ import pandas as pd  # XLSX 저장용
 plt.style.use(hvsrpy.HVSRPY_MPL_STYLE)
 
 # === 입력 및 출력 폴더 설정 ===
-data_dir = Path("C:/SOLODATA/zonghap/3month/36dB")  # .sac 파일들이 들어있는 폴더
+data_dir = Path("C:/SOLODATA/zonghap/3month/3월부터얻은데이터목록")  # .sac 파일들이 들어있는 폴더
 save_root = Path("C:/SOLODATA/zonghap/hvsr_try")
 output_dir = save_root / data_dir.name
 output_dir.mkdir(parents=True, exist_ok=True)
