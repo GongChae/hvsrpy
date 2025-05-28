@@ -2,7 +2,7 @@ import pandas as pd
 from pathlib import Path
 
 # === 경로 설정 ===
-input_dir = Path("C:/SOLODATA/zonghap/hvsr_try/36dB")      # 원본 .xlsx 폴더
+input_dir = Path("C:/SOLODATA/zonghap/hvsr_try/종합설계")      # 원본 .xlsx 폴더
 output_dir = Path("C:/SOLODATA/MAPE") # 결과 저장 폴더
 output_dir.mkdir(parents=True, exist_ok=True)
 

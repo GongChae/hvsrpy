@@ -12,7 +12,7 @@ import pandas as pd  # XLSX 저장용
 plt.style.use(hvsrpy.HVSRPY_MPL_STYLE)
 
 # === 입력 및 출력 폴더 설정 ===
-data_dir = Path("C:/SOLODATA/zonghap/3month/3월부터얻은데이터목록")  # .sac 파일들이 들어있는 폴더
+data_dir = Path("C:/SOLODATA/zonghap/3month/종합설계")  # .sac 파일들이 들어있는 폴더
 save_root = Path("C:/SOLODATA/zonghap/hvsr_try")
 output_dir = save_root / data_dir.name
 output_dir.mkdir(parents=True, exist_ok=True)
@@ -50,7 +50,7 @@ processing_settings = hvsrpy.settings.HvsrTraditionalProcessingSettings()
 processing_settings.window_type_and_width = ("tukey", 0.1)
 processing_settings.smoothing = dict(
     operator="konno_and_ohmachi",
-    bandwidth=20,
+    bandwidth=40,
     center_frequencies_in_hz=np.geomspace(1, 20, 200)
 )
 processing_settings.method_to_combine_horizontals = "total_horizontal_energy"
@@ -81,7 +81,7 @@ for base_id, fnames in fname_sets:
                 srecords_pre = hvsrpy.preprocess(srecords_copy, preprocessing_settings)
                 hvsr = hvsrpy.process(srecords_pre, processing_settings)
                 n = 2
-                search_range_in_hz = (0.1, 20)
+                search_range_in_hz = (1, 20)
                 _ = hvsrpy.frequency_domain_window_rejection(hvsr, n=n, search_range_in_hz=search_range_in_hz)
 
                 if hvsr and hasattr(hvsr, 'mean_curve'):

@@ -39,7 +39,7 @@ if not fname_sets:
 
 # === 파라미터 설정 ===
 #window_lengths = range(5, 61, 5)
-window_lengths = range(5, 61, 5)
+window_lengths = range(10, 51, 5)
 taper_ratios = np.round(np.arange(0.0, 1.01, 0.1), 2)
 bandwidths = range(10, 61, 10)
 methods = [
@@ -75,7 +75,7 @@ for base_id, fnames in fname_sets:
                             preprocessing_settings.detrend = "linear"
                             preprocessing_settings.window_length_in_seconds = win_len
                             preprocessing_settings.orient_to_degrees_from_north = 0.0
-                            preprocessing_settings.filter_corner_frequencies_in_hz = (0.1, 20)
+                            preprocessing_settings.filter_corner_frequencies_in_hz = (1, 20)
                             preprocessing_settings.ignore_dissimilar_time_step_warning = False
 
                             # ── 처리 설정 ──
@@ -84,7 +84,7 @@ for base_id, fnames in fname_sets:
                             processing_settings.smoothing = dict(
                                 operator="konno_and_ohmachi",
                                 bandwidth=bw,
-                                center_frequencies_in_hz=np.geomspace(0.1, 20, 200)
+                                center_frequencies_in_hz=np.geomspace(1, 20, 200)
                             )
                             processing_settings.method_to_combine_horizontals = method
                             processing_settings.handle_dissimilar_time_steps_by = "frequency_domain_resampling"
@@ -94,7 +94,7 @@ for base_id, fnames in fname_sets:
                             s_pre = hvsrpy.preprocess(s_copy, preprocessing_settings)
                             hvsr = hvsrpy.process(s_pre, processing_settings)
                             n=2
-                            search_range_in_hz = (0.1, 20)
+                            search_range_in_hz = (1, 20)
                             _ = hvsrpy.frequency_domain_window_rejection(hvsr, n=n, search_range_in_hz=search_range_in_hz)
 
                             # ── 고유주파수 추출 ──
