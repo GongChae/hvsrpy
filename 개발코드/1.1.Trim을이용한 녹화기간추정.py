@@ -43,15 +43,15 @@ preprocessing_settings = hvsrpy.settings.HvsrPreProcessingSettings()
 preprocessing_settings.detrend = "linear"
 preprocessing_settings.window_length_in_seconds = 30
 preprocessing_settings.orient_to_degrees_from_north = 0.0
-preprocessing_settings.filter_corner_frequencies_in_hz = (0.1, 20)
+preprocessing_settings.filter_corner_frequencies_in_hz = (1, 20)
 preprocessing_settings.ignore_dissimilar_time_step_warning = False
 
 processing_settings = hvsrpy.settings.HvsrTraditionalProcessingSettings()
 processing_settings.window_type_and_width = ("tukey", 0.1)
 processing_settings.smoothing = dict(
     operator="konno_and_ohmachi",
-    bandwidth=40,
-    center_frequencies_in_hz=np.geomspace(0.1, 20, 200)
+    bandwidth=20,
+    center_frequencies_in_hz=np.geomspace(1, 20, 200)
 )
 processing_settings.method_to_combine_horizontals = "total_horizontal_energy"
 processing_settings.handle_dissimilar_time_steps_by = "frequency_domain_resampling"
@@ -79,17 +79,10 @@ for base_id, fnames in fname_sets:
                         ts.trim(start_time, end_time)
 
                 srecords_pre = hvsrpy.preprocess(srecords_copy, preprocessing_settings)
-
-                passing = hvsrpy.sta_lta_window_rejection(
-                    srecords_pre,
-                    sta_seconds=1,
-                    lta_seconds=30,
-                    min_sta_lta_ratio=0.1,
-                    max_sta_lta_ratio=2.5,
-                    hvsr=None
-                )
-
-                hvsr = hvsrpy.process(passing, processing_settings)
+                hvsr = hvsrpy.process(srecords_pre, processing_settings)
+                n = 2
+                search_range_in_hz = (0.1, 20)
+                _ = hvsrpy.frequency_domain_window_rejection(hvsr, n=n, search_range_in_hz=search_range_in_hz)
 
                 if hvsr and hasattr(hvsr, 'mean_curve'):
                     mean_curve = hvsr.mean_curve()
