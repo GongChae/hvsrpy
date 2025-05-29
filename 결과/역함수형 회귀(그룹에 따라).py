@@ -16,7 +16,7 @@ plt.rc('font', family=fontprop.get_name())
 plt.rcParams['axes.unicode_minus'] = False
 
 # 데이터 불러오기
-file_path = Path("C:/Users/USER/Downloads/제발되라.csv")
+file_path = Path("C:/Users/USER/Desktop/전체/0529_암반추가.csv")
 df = pd.read_csv(file_path, encoding='cp949')
 
 # 역함수 모델 정의: y = a / (x + c)
@@ -49,7 +49,7 @@ for group_name, group_df in groups_6th:
 
         plt.figure(figsize=(8, 6))
         plt.scatter(x, y, label='실제 데이터', color='blue')
-        plt.plot(x_pred, y_pred_curve, color='red', label=f'모델: y = {a:.2f}/(x + {c:.2f}), R² = {r2:.2f}')
+        plt.plot(x_pred, y_pred_curve, color='red', label=f'모델: y = {a:.2f}/(x + {c:.2f}), R² = {r2:.4f}')
         plt.xlabel('Peak Frequency (입력)')
         plt.ylabel('기반암심도 (정답)')
         plt.title(f"그룹 '{group_name}' 역함수 모델")

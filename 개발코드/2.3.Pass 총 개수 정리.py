@@ -2,8 +2,8 @@ import pandas as pd
 from pathlib import Path
 
 # === 경로 설정 ===
-input_file = Path("C:/Users/USER/Desktop/전체/merged.xlsx")   # 입력 파일
-output_file = Path("C:/Users/USER/Desktop/전체/merged_pass개수.xlsx")  # 출력 파일
+input_file = Path("C:/Users/USER/Desktop/전체/merged_전체데이터.xlsx")   # 입력 파일
+output_file = Path("C:/Users/USER/Desktop/전체/merged_pass개수_전체데이터.xlsx")  # 출력 파일
 
 # === 파일 읽기 ===
 df = pd.read_excel(input_file)

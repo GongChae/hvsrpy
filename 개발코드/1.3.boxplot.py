@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
 
@@ -31,56 +32,43 @@ merged_path = output_dir / "merged_result.xlsx"
 result_df.to_excel(merged_path, index=False)
 print(f"✅ 병합 완료: {merged_path}")
 
-# === 병합된 파일에서 1~3행 제거 후 불러오기
-df = pd.read_excel(merged_path, skiprows=3)
-
-# === X축 값과 데이터 분리
-x_labels = df.iloc[:, 0].reset_index(drop=True)
-data = df.iloc[:, 1:]
-data_t = data.transpose()
-
-# === IQR 계산 (숫자 강제 변환 + 적은 데이터 체크)
-iqr_records = []
-
-for idx, col in enumerate(data.columns):
-    col_data = pd.to_numeric(data[col], errors='coerce').dropna()
-    unique_vals = col_data.unique()
-    count = len(col_data)
-
-    if count >= 4 and idx < len(x_labels):  # 최소 4개 이상 있어야 분위 계산 의미 있음
-        q1 = col_data.quantile(0.25)
-        q3 = col_data.quantile(0.75)
+# === IQR 계산 (행 기준)
+iqr_list = []
+for idx, row in result_df.iterrows():
+    row_values = pd.to_numeric(row[1:], errors='coerce').dropna().values  # 첫 열(X값) 제외
+    if len(row_values) >= 4:
+        q1 = np.percentile(row_values, 25)
+        q3 = np.percentile(row_values, 75)
         iqr = q3 - q1
-        x_label_value = x_labels.iloc[idx]
-        iqr_records.append({"X": x_label_value, "IQR": iqr})
-        print(f"✅ X값 '{x_label_value}' → Count: {count}, Q1: {q1:.4f}, Q3: {q3:.4f}, IQR: {iqr:.4f}")
+        iqr_list.append({'X': row['X'], 'Q1': q1, 'Q3': q3, 'IQR': iqr})
+        print(f"✅ X '{row['X']}' → Count: {len(row_values)}, Q1: {q1:.4f}, Q3: {q3:.4f}, IQR: {iqr:.4f}")
     else:
-        x_label_value = x_labels.iloc[idx]
-        iqr_records.append({"X": x_label_value, "IQR": None})
-        print(f"⚠️ X값 '{x_label_value}' → 데이터 수 부족 (Count: {count}), IQR 계산 생략")
+        iqr_list.append({'X': row['X'], 'Q1': None, 'Q3': None, 'IQR': None})
+        print(f"⚠️ X '{row['X']}' → 데이터 수 부족 (Count: {len(row_values)}), IQR 계산 생략")
 
-# === IQR 결과 저장
-iqr_df = pd.DataFrame(iqr_records)
-iqr_output_path = output_dir / "iqr_results.xlsx"
+# === IQR 결과 DataFrame
+iqr_df = pd.DataFrame(iqr_list)
+
+# === 결과 저장
+iqr_output_path = output_dir / "iqr_values_by_row.xlsx"
 iqr_df.to_excel(iqr_output_path, index=False)
-print(f"✅ IQR 결과 저장 완료: {iqr_output_path}")
+print(f"✅ 행별 IQR 값이 {iqr_output_path} 에 저장되었습니다.")
 
-# === 박스플롯 그리기
-if not data_t.empty:
-    plt.figure(figsize=(14, 6))
-    bp = plt.boxplot(data_t.values, tick_labels=x_labels, vert=True, patch_artist=True)
-    box_color = "skyblue"
-    for patch in bp['boxes']:
-        patch.set_facecolor(box_color)
+# === 행 기준 박스플롯 그리기 (X값 기준)
+data_for_plot = result_df.drop(columns='X').transpose()  # 첫 열(X) 제거 후 전치
 
-    plt.title("HVSR MAPE by Record Duration (Row-wise Boxplot)")
-    plt.xlabel("Record Duration (X values)")
-    plt.ylabel("MAPE")
-    plt.xticks(rotation=45)
-    plt.ylim(0, 0.2)
-    plt.gca().invert_xaxis()
-    plt.grid(True)
-    plt.tight_layout()
-    plt.show()
-else:
-    print("❌ boxplot을 그릴 수 있는 유효한 숫자 데이터가 없습니다.")
+plt.figure(figsize=(14, 6))
+plt.boxplot(data_for_plot.values, labels=result_df['X'], vert=True, patch_artist=True)
+
+# 스타일
+box_color = "skyblue"
+for patch in plt.gca().artists:
+    patch.set_facecolor(box_color)
+
+plt.xlabel('X 값', fontsize=14)
+plt.ylabel('값 분포', fontsize=14)
+plt.title('각 X 값별 박스플롯 (행 기준)', fontsize=16)
+plt.xticks(rotation=45)
+plt.grid(True, axis='y', linestyle='--', alpha=0.7)
+plt.tight_layout()
+plt.show()

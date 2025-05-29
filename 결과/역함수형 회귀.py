@@ -13,7 +13,7 @@ plt.rc('font', family=fontprop.get_name())
 plt.rcParams['axes.unicode_minus'] = False
 
 # 데이터 불러오기
-file_path = Path("C:/Users/USER/Downloads/제발되라.csv")
+file_path = Path("C:/Users/USER/Desktop/전체/0529_암반추가.csv")
 df = pd.read_csv(file_path, encoding='cp949')
 
 # 유효 데이터 필터링

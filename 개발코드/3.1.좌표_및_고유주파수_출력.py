@@ -10,7 +10,7 @@ from copy import deepcopy
 from collections import defaultdict
 
 # === 경로 설정 ===
-data_dir = Path("C:/SOLODATA/zonghap/3month/3월부터얻은데이터목록")
+data_dir = Path("C:/SOLODATA/zonghap/3month/종합설계")
 output_dir = Path('C:/Users/user/Desktop/전체')
 output_dir.mkdir(parents=True, exist_ok=True)
 
