@@ -68,7 +68,7 @@ try:
     # 그래프
     plt.figure(figsize=(8, 6))
     plt.scatter(x_filtered, y_filtered, label='평균 데이터 (그룹당 하나)', color='blue', alpha=0.8)
-    plt.plot(x_line, y_line, color='red', label=f'회귀: y={a:.2f}/(x+{c:.2f})^{b:.2f}\nR²={r2:.4f}')
+    plt.plot(x_line, y_line, color='red', label=f'회귀: y={a:.2f}/(x{c:.2f})^{b:.2f}\nR²={r2:.4f}')
     plt.xlabel('입력 데이터 (4열 평균)')
     plt.ylabel('정답 데이터 (5열)')
     plt.title('역함수형 회귀 (그룹 평균값 사용)')
