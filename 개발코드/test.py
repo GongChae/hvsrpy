@@ -1,73 +1,50 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.font_manager as fm
+from scipy.optimize import curve_fit
+from sklearn.metrics import r2_score
 
-# 한글 폰트 설정 (맑은 고딕)
-font_path = 'C:/Windows/Fonts/malgun.ttf'
-fontprop = fm.FontProperties(fname=font_path, size=12)
-plt.rc('font', family=fontprop.get_name())
-plt.rcParams['axes.unicode_minus'] = False
+# 데이터 불러오기
+file_path = 'C:/Users/USER/Desktop/전체/0529_암반추가.csv'  # 경로 수정하세요
+df = pd.read_csv(file_path)
 
-# === 1️⃣ merged_result.xlsx 불러오기
-file_path = 'C:/SOLODATA/boxplot/merged_result.xlsx'
-df = pd.read_excel(file_path)
+# 4열, 5열 추출 (0-based index)
+x = df.iloc[:, 3].values
+y = df.iloc[:, 4].values
 
-# === 박스플롯 먼저 ===
+# 동일한 y 값에 대해 역가중치 계산
+unique_y, counts = np.unique(y, return_counts=True)
+weight_map = {val: 1/count for val, count in zip(unique_y, counts)}
+weights = np.array([weight_map[val] for val in y])
 
-# X축 레이블 준비
-x_labels = df.iloc[:, 0].astype(str)
+# 멱급수 역함수 모델 정의: y = a / (x + c)^b
+def inverse_power_func(x, a, b, c):
+    return a / (x + c) ** b
 
-# 값 데이터 (행 기준 박스플롯, transpose 필요)
-data = df.iloc[:, 1:]
-data_t = data.transpose()
+# 회귀 피팅
+popt, _ = curve_fit(inverse_power_func, x, y, sigma=weights, absolute_sigma=False, maxfev=10000)
+a, b, c = popt
 
-# 숫자형 강제 변환
-data_numeric = data_t.apply(pd.to_numeric, errors='coerce')
+# 예측값 계산
+y_pred = inverse_power_func(x, a, b, c)
 
-# 왼쪽 두 범주 제외
-x_labels_for_plot = x_labels[2:].reset_index(drop=True)
-data_for_plot = data_numeric.iloc[:, 2:]
+# R² 계산
+r2 = r2_score(y, y_pred)
+print(f"🌟 피팅 결과: y = {a:.4f} / (x + {c:.4f})^{b:.4f}")
+print(f"🌟 R² = {r2:.4f}")
 
-# === X축 범주 및 데이터 반전 ===
-x_labels_reversed = x_labels_for_plot[::-1].reset_index(drop=True)
-data_reversed = data_for_plot.iloc[:, ::-1]  # 열 순서 반대로
+# 예측 곡선용 데이터
+x_line = np.linspace(x.min(), x.max(), 200)
+y_line = inverse_power_func(x_line, a, b, c)
 
-plt.figure(figsize=(14, 6))
-bp = plt.boxplot(data_reversed.values, tick_labels=x_labels_reversed, vert=True, patch_artist=True, showmeans=True,
-                 showfliers=True,  # 이상치 표시
-                 meanprops={'markerfacecolor': 'red', 'markeredgecolor': 'red', 'marker': '^'})
-
-for patch in bp['boxes']:
-    patch.set_facecolor('skyblue')
-
-plt.xlabel('Record Duration', fontsize=14)
-plt.ylabel('값 분포', fontsize=14)
-plt.title('Record Duration별 박스플롯 (왼쪽 두 범주 제외, X축 반전)', fontsize=16)
-plt.xticks(rotation=45)
-plt.ylim(0,0.2)
-plt.grid(True, axis='y', linestyle='--', alpha=0.7)
+# 그래프 그리기
+plt.figure(figsize=(8, 6))
+plt.scatter(x, y, label='실제 데이터', color='blue', alpha=0.6)
+plt.plot(x_line, y_line, color='red', label=f'회귀: y={a:.2f}/(x+{c:.2f})^{b:.2f}\nR²={r2:.4f}')
+plt.xlabel('입력 데이터 (4열)')
+plt.ylabel('정답 데이터 (5열)')
+plt.title('멱급수 역함수 회귀 (가중치 적용)')
+plt.legend()
+plt.grid(True)
 plt.tight_layout()
 plt.show()
-
-# === 2️⃣ IQR 계산 및 저장 ===
-iqr_list = []
-for idx, row in df.iterrows():
-    row_values = pd.to_numeric(row[1:], errors='coerce').dropna().values  # 첫 열(X값) 제외
-    record_duration = row.iloc[0]
-
-    if len(row_values) >= 4:
-        q1 = np.percentile(row_values, 25)
-        q3 = np.percentile(row_values, 75)
-        iqr = q3 - q1
-        iqr_list.append({'Record Duration': record_duration, 'Q1': q1, 'Q3': q3, 'IQR': iqr})
-        print(
-            f"✅ Record Duration '{record_duration}' → Count: {len(row_values)}, Q1: {q1:.4f}, Q3: {q3:.4f}, IQR: {iqr:.4f}")
-    else:
-        iqr_list.append({'Record Duration': record_duration, 'Q1': None, 'Q3': None, 'IQR': None})
-        print(f"⚠️ Record Duration '{record_duration}' → 데이터 수 부족 (Count: {len(row_values)}), IQR 계산 생략")
-
-iqr_df = pd.DataFrame(iqr_list)
-output_iqr_path = 'C:/SOLODATA/boxplot/iqr_values_by_row.xlsx'
-iqr_df.to_excel(output_iqr_path, index=False)
-print(f"✅ 행별 IQR 값이 {output_iqr_path} 에 저장되었습니다.")
