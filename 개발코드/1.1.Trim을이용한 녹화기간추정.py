@@ -40,20 +40,20 @@ if not fname_sets:
 
 # === HVSR 설정 ===
 preprocessing_settings = hvsrpy.settings.HvsrPreProcessingSettings()
-preprocessing_settings.detrend = "linear"
+preprocessing_settings.detrend = "constant"
 preprocessing_settings.window_length_in_seconds = 30
 preprocessing_settings.orient_to_degrees_from_north = 0.0
-preprocessing_settings.filter_corner_frequencies_in_hz = (1, 20)
+preprocessing_settings.filter_corner_frequencies_in_hz = (0.1,20)
 preprocessing_settings.ignore_dissimilar_time_step_warning = False
 
 processing_settings = hvsrpy.settings.HvsrTraditionalProcessingSettings()
-processing_settings.window_type_and_width = ("tukey", 0.1)
+processing_settings.window_type_and_width = ("tukey", 0)
 processing_settings.smoothing = dict(
     operator="konno_and_ohmachi",
-    bandwidth=40,
-    center_frequencies_in_hz=np.geomspace(1, 20, 200)
+    bandwidth=20,
+    center_frequencies_in_hz=np.geomspace(0.1, 20, 200)
 )
-processing_settings.method_to_combine_horizontals = "total_horizontal_energy"
+processing_settings.method_to_combine_horizontals = "geometric_mean"
 processing_settings.handle_dissimilar_time_steps_by = "frequency_domain_resampling"
 
 # === 각 세트 처리 ===
@@ -81,13 +81,13 @@ for base_id, fnames in fname_sets:
                 srecords_pre = hvsrpy.preprocess(srecords_copy, preprocessing_settings)
                 hvsr = hvsrpy.process(srecords_pre, processing_settings)
                 n = 2
-                search_range_in_hz = (1, 20)
+                search_range_in_hz = (0.1, 30)
                 _ = hvsrpy.frequency_domain_window_rejection(hvsr, n=n, search_range_in_hz=search_range_in_hz)
 
                 if hvsr and hasattr(hvsr, 'mean_curve'):
                     mean_curve = hvsr.mean_curve()
                     f0 = hvsr.frequency[np.argmax(mean_curve)]
-                    results.append([interval, f"{f0:.5f}"])
+                    results.append([interval, f"{f0:.8f}"])
                 else:
                     results.append([interval, "N/A"])
 

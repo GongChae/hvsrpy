@@ -67,11 +67,11 @@ try:
 
     # 그래프
     plt.figure(figsize=(8, 6))
-    plt.scatter(x_filtered, y_filtered, label='평균 데이터 (그룹당 하나)', color='blue', alpha=0.8)
+    plt.scatter(x_filtered, y_filtered, label='실제 데이터',edgecolors='blue', marker='o',facecolor='none' ,alpha=0.8, s=70,linewidths=1.5)
     plt.plot(x_line, y_line, color='red', label=f'회귀: y={a:.2f}*x^{b:.2f}\nR²={r2:.4f}')
-    plt.xlabel('입력 데이터 (4열 평균)')
-    plt.ylabel('정답 데이터 (5열)')
-    plt.title('멱급수 회귀')
+    plt.xlabel('고유 주파수 (f0)', fontsize=16)
+    plt.ylabel('퇴적물의 두께 (m)',fontsize=16)
+    plt.title('멱급수 회귀식 그래프 (a)',fontsize=20)
     plt.legend()
     plt.grid(True)
     plt.tight_layout()

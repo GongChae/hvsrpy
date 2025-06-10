@@ -1,81 +1,127 @@
-import pandas as pd
+import os
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
-from scipy.optimize import curve_fit
-from sklearn.metrics import r2_score
-import matplotlib.font_manager as fm
+from pathlib import Path
+from copy import deepcopy
+from collections import defaultdict
+from scipy.stats import iqr
+import hvsrpy
 
-# 한글 폰트 설정 (맑은 고딕)
-font_path = 'C:/Windows/Fonts/malgun.ttf'
-fontprop = fm.FontProperties(fname=font_path, size=12)
-plt.rc('font', family=fontprop.get_name())
+# === 폰트 설정 (한글 깨짐 방지) ===
+plt.rcParams['font.family'] = 'Malgun Gothic'  # Windows 환경
 plt.rcParams['axes.unicode_minus'] = False
 
-# 데이터 불러오기
-file_path = 'C:/Users/USER/Desktop/전체/0529_암반추가_조작.csv'  # 경로 수정하세요
-df = pd.read_csv(file_path, encoding='cp949')
+# === 설정 ===
+data_root = Path("C:/SOLODATA/zonghap/3month/종합설계")
+save_root = Path("C:/SOLODATA/MAPE_Results")
+save_root.mkdir(parents=True, exist_ok=True)
 
-# 4열, 5열 추출
-x_raw = df.iloc[:, 3]
-y_raw = df.iloc[:, 4]
+plt.rcParams['font.family'] = 'Malgun Gothic'
+plt.rcParams['axes.unicode_minus'] = False
 
-# 같은 y값 그룹으로 묶어서 x값 평균 계산
-grouped = df.groupby(df.iloc[:, 4])
-x_means = grouped.apply(lambda g: g.iloc[:, 3].mean()).values
-y_unique = grouped.apply(lambda g: g.iloc[:, 4].iloc[0]).values
+duration_sec = list(range(300, 3600, 300))
 
-# numpy 배열
-x = np.array(x_means)
-y = np.array(y_unique)
+preprocessing_settings = hvsrpy.settings.HvsrPreProcessingSettings()
+preprocessing_settings.detrend = "linear"
+preprocessing_settings.window_length_in_seconds = 30
+preprocessing_settings.orient_to_degrees_from_north = 0.0
+preprocessing_settings.filter_corner_frequencies_in_hz = (0.1, 20)
 
-# x > 0만 사용
-mask = x > 0
-x_filtered = x[mask]
-y_filtered = y[mask]
+processing_settings = hvsrpy.settings.HvsrTraditionalProcessingSettings()
+processing_settings.window_type_and_width = ("tukey", 0.1)
+processing_settings.smoothing = dict(
+    operator="konno_and_ohmachi",
+    bandwidth=40,
+    center_frequencies_in_hz=np.geomspace(0.5, 20, 200)
+)
+processing_settings.method_to_combine_horizontals = "total_horizontal_energy"
+processing_settings.handle_dissimilar_time_steps_by = "frequency_domain_resampling"
 
-# 멱급수 모델: y = a * x^b
-def power_func(x, a, b):
-    return a * np.power(x, b)
+def compute_mape(true_val, predictions):
+    preds = np.array(predictions, dtype=float)
+    return np.mean(np.abs((true_val - preds) / true_val)) * 100
 
-# 초기값
-initial_guess = [1.0, -1.0]  # b 음수로 초기화
+# === 📦 모든 .sac 파일에서 Z/N/E 세트 구성 ===
+grouped_files = defaultdict(dict)
 
-# bounds: a ≥ 0, b < 0 (예: b 상한 -1e-8로 사실상 음수만 허용)
-param_bounds = ([0, -np.inf], [np.inf, -1e-8])
+for sac_file in data_root.rglob("*.sac"):
+    parts = sac_file.stem.split(".")
+    if len(parts) < 2:
+        continue
+    base_id = ".".join(parts[:-1])
+    comp = parts[-1].upper()
+    grouped_files[base_id][comp] = str(sac_file)
 
-try:
-    popt, _ = curve_fit(
-        power_func,
-        x_filtered, y_filtered,
-        p0=initial_guess,
-        bounds=param_bounds,
-        maxfev=50000
-    )
-    a, b = popt
+fname_sets = []
+for base, comps in grouped_files.items():
+    if all(k in comps for k in ["Z", "N", "E"]):
+        fname_sets.append((base, [comps["Z"], comps["N"], comps["E"]]))
 
-    # 예측값
-    y_pred = power_func(x_filtered, a, b)
+if not fname_sets:
+    print("❌ E/N/Z 세트를 찾을 수 없습니다.")
+    exit()
 
-    # R²
-    r2 = r2_score(y_filtered, y_pred)
-    print(f"🌟 피팅 결과 (b < 0 강제): y = {a:.4f} * x^{b:.4f}")
-    print(f"🌟 R² = {r2:.4f}")
+print(f"✅ 총 유효한 세트 수: {len(fname_sets)}")
 
-    # 예측 곡선
-    x_line = np.linspace(x_filtered.min(), x_filtered.max(), 200)
-    y_line = power_func(x_line, a, b)
+# === 분석 수행 ===
+all_mape = defaultdict(list)
 
-    # 그래프
-    plt.figure(figsize=(8, 6))
-    plt.scatter(x_filtered, y_filtered, label='평균 데이터 (그룹당 하나)', color='blue', alpha=0.8)
-    plt.plot(x_line, y_line, color='red', label=f'회귀: y={a:.2f}*x^{b:.2f}\nR²={r2:.4f}')
-    plt.xlabel('입력 데이터 (4열 평균)')
-    plt.ylabel('정답 데이터 (5열)')
-    plt.title('멱급수 회귀')
-    plt.legend()
+for base_id, fnames in fname_sets:
+    print(f"\n🔍 {base_id} 처리 중...")
+    try:
+        srecords = hvsrpy.read([fnames])
+        ts_sample = getattr(srecords[0], "vt")
+        end_time = ts_sample.time()[-1]
+
+        # 기준값 (60분) 계산
+        srecords_60 = deepcopy(srecords)
+        for rec in srecords_60:
+            for comp in ("ns", "ew", "vt"):
+                getattr(rec, comp).trim(end_time - 3600, end_time)
+        srecords_60 = hvsrpy.preprocess(srecords_60, preprocessing_settings)
+        hvsr_60 = hvsrpy.process(srecords_60, processing_settings)
+        true_fn = hvsr_60.mean_fn_frequency()
+        print(f" 기준 fn: {true_fn:.3f} Hz")
+
+        # duration 별 처리
+        for dur in duration_sec:
+            s_copy = deepcopy(srecords)
+            for rec in s_copy:
+                for comp in ("ns", "ew", "vt"):
+                    getattr(rec, comp).trim(end_time - dur, end_time)
+            try:
+                s_pre = hvsrpy.preprocess(s_copy, preprocessing_settings)
+                hvsr_d = hvsrpy.process(s_pre, processing_settings)
+                pred_fn = hvsr_d.mean_fn_frequency()
+                mape = compute_mape(true_fn, [pred_fn])
+                all_mape[dur].append(mape)
+                print(f"  - {dur}초: fn={pred_fn:.3f} Hz → MAPE={mape:.2f}%")
+            except Exception as e:
+                print(f"  - {dur}초 실패: {e}")
+    except Exception as e:
+        print(f"❌ 처리 실패: {base_id} → {e}")
+
+# === 결과 저장 및 시각화 ===
+mape_df = pd.DataFrame({f"{k}초": v for k, v in all_mape.items()})
+mape_df = mape_df.dropna(axis=1, how='all')
+mape_df = mape_df.select_dtypes(include=[np.number])
+
+if not mape_df.empty:
+    plt.figure(figsize=(12, 6))
+    mape_df.boxplot()
+    plt.title("녹화 기간 별 Boxplot 그래프",fontsize=20)
+    plt.ylabel("MAPE (%)",fontsize=16)
+    plt.xlabel("녹화 기간 (초)",fontsize=16)
     plt.grid(True)
     plt.tight_layout()
+    plt.savefig(save_root / "mape_boxplot.png")
     plt.show()
 
-except RuntimeError as e:
-    print(f"⚠️ 피팅 실패: {e}")
+    iqr_series = mape_df.apply(iqr, axis=0)
+    iqr_series.to_csv(save_root / "MAPE_IQR.csv", header=["IQR"])
+    mape_df.to_csv(save_root / "MAPE_raw_values.csv", index=False)
+    print("\n✅ 모든 작업이 완료되었습니다. 결과는 다음 폴더에 저장되었습니다:")
+    print(save_root)
+else:
+    print("\n❗ 유효한 MAPE 데이터가 없어 결과를 저장하지 않았습니다.")

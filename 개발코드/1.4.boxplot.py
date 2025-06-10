@@ -10,7 +10,7 @@ plt.rc('font', family=fontprop.get_name())
 plt.rcParams['axes.unicode_minus'] = False
 
 # === 1️⃣ merged_result.xlsx 불러오기
-file_path = 'C:/SOLODATA/boxplot/merged_result.xlsx'
+file_path = 'C:/SOLODATA/boxplot/mape_merged.xlsx'
 df = pd.read_excel(file_path)
 
 # === 박스플롯 먼저 ===
@@ -45,7 +45,7 @@ plt.xlabel('Record Duration', fontsize=14)
 plt.ylabel('값 분포', fontsize=14)
 plt.title('Record Duration별 박스플롯 (왼쪽 두 범주 제외, X축 반전)', fontsize=16)
 plt.xticks(rotation=45)
-plt.ylim(0,0.2)
+plt.ylim(0,0.12)
 plt.grid(True, axis='y', linestyle='--', alpha=0.7)
 plt.tight_layout()
 plt.show()
@@ -71,3 +71,25 @@ iqr_df = pd.DataFrame(iqr_list)
 output_iqr_path = 'C:/SOLODATA/boxplot/iqr_values_by_row.xlsx'
 iqr_df.to_excel(output_iqr_path, index=False)
 print(f"✅ 행별 IQR 값이 {output_iqr_path} 에 저장되었습니다.")
+
+# === 3️⃣ IQR 꺾은선 그래프 그리기 ===
+plt.figure(figsize=(12, 6))
+
+# IQR 값만 추출 (None 값은 0으로 처리)
+plot_iqr = iqr_df.copy()
+plot_iqr['IQR'] = plot_iqr['IQR'].fillna(0)
+
+# X, Y 값 준비 (왼쪽 두 범주 제외, 뒤집기)
+x_iqr_reversed = plot_iqr['Record Duration'].astype(str)[2:][::-1].reset_index(drop=True)
+y_iqr_reversed = plot_iqr['IQR'][2:][::-1].reset_index(drop=True)
+
+# 꺾은선 그래프 그리기
+plt.plot(x_iqr_reversed, y_iqr_reversed, marker='o', linestyle='-', color='blue', linewidth=2)
+
+plt.xlabel('Record Duration', fontsize=14)
+plt.ylabel('IQR (Interquartile Range)', fontsize=14)
+plt.title('각 Record Duration별 IQR 값 (꺾은선 그래프)', fontsize=16)
+plt.xticks(rotation=45)
+plt.grid(True, axis='y', linestyle='--', alpha=0.7)
+plt.tight_layout()
+plt.show()
