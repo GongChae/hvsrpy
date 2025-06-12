@@ -72,35 +72,18 @@ try:
     y_line = inverse_power_func(x_line, a, b, c)
 
     # 그래프
-    fig, ax = plt.subplots(figsize=(8, 6))
-    ax.scatter(x_filtered, y_filtered, label='실제 데이터', edgecolors='blue',
-               marker='o', facecolor='none', alpha=0.8, s=70, linewidths=1.5)
-    ax.plot(x_line, y_line, color='red', label='역함수 회귀 그래프')
-
-    # 박스 내용
-    textstr = (f'회귀식:\n'
-               f'y = {a:.4f} / (x {c:.4f})^{b:.4f}\n'
-               f'결정계수 (R²) = {r2:.4f}\n'
-               f'RMSE = {rmse:.4f}')
-
-    # 박스 스타일
-    props = dict(boxstyle='square,pad=1',  # 박스 모양 + 내부 여백
-                 facecolor='White',  # 배경색
-                 edgecolor='black',  # 테두리 색
-                 linewidth=1,  # 테두리 두께
-                 alpha=1)  # 투명도
-
-    # 박스 위치: 오른쪽
-    ax.text(1.05, 0.5, textstr, transform=ax.transAxes, fontsize=12,
-            verticalalignment='center', bbox=props)
-
-    ax.set_xlabel('고유 주파수 (f0)', fontsize=16)
-    ax.set_ylabel('퇴적물의 두께 (m)', fontsize=16)
-    ax.legend(fontsize=16)
-    ax.grid(True)
-
+    plt.figure(figsize=(8, 6))
+    plt.scatter(x_filtered, y_filtered, label='실제 데이터', edgecolors='blue', marker='o', facecolor='none', alpha=0.8,
+                s=70, linewidths=1.5)
+    plt.plot(x_line, y_line, color='red', label=f'역함수 회귀 그래프')
+    plt.xlabel('고유 주파수 (f0)', fontsize=16)
+    plt.ylabel('퇴적물의 두께 (m)', fontsize=16)
+    # plt.title('멱급수 회귀식 그래프 (a)',fontsize=20)
+    plt.legend()
+    plt.grid(True)
     plt.tight_layout()
     plt.show()
+
 
 except RuntimeError as e:
     print(f"⚠️ 피팅 실패: {e}")
